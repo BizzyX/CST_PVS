@@ -5,7 +5,7 @@
 int main(int argc, char* argv[])
 {
 
-	printf("hello world!\n");
+	printf("hello david!\n");
 	system("pause");
 	return 0;
 
