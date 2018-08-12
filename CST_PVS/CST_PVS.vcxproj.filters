@@ -19,4 +19,9 @@
       <Filter>Quelldateien</Filter>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\..\..\..\Downloads\strings.txt">
+      <Filter>Ressourcendateien</Filter>
+    </Text>
+  </ItemGroup>
 </Project>
