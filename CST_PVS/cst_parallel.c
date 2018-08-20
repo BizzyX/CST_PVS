@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <mpi.h>
 
 #ifdef _MSC_VER
@@ -7,6 +8,8 @@
 #endif
 
 #define BUFF_SIZE 1000
+
+void testGetFile();
 
 
 int main(int argc, char* argv[])
@@ -17,11 +20,12 @@ int main(int argc, char* argv[])
 	MPI_Init(NULL, NULL);
 
 	//read from .txt file 'strings.txt'
-	FILE *ptr_strings = (fopen_s(&ptr_strings, "strings.txt", "r"));
+	//FILE *ptr_strings = (fopen_s(&ptr_strings, "strings.txt", "r"));
 	char buf[BUFF_SIZE];
 	int numberArray[BUFF_SIZE];
 	int i;
 
+	/*
 	//read unsuccesful
 	if (!ptr_strings)
 	{
@@ -44,8 +48,10 @@ int main(int argc, char* argv[])
 		{
 			printf("Number is: %d\n\n", numberArray[i]);
 		}
-		*/
-	}
+		
+	
+}
+*/
 
 	//Get the number of processes
 	int world_size;
@@ -62,8 +68,43 @@ int main(int argc, char* argv[])
 
 	//Finalize the MPI Environment
 	MPI_Finalize();
+	testGetFile();
 
 	system("pause");
 	return 0;
 
+}
+
+void testGetFile() {
+	// open file
+	FILE *fp = fopen("strings.txt", "r");
+	size_t len = 255;
+	int arraySize = 0;
+	void** stringArray;
+	// need malloc memory for line, if not, segmentation fault error will occurred.
+	char *line = malloc(sizeof(char) * len);
+	// check if file exist (and you can open it) or not
+	if (fp == NULL) {
+		printf("can't open file input1.txt!");
+		return;
+	}
+
+	if (fgets(line, len, fp) != NULL) {
+	
+		arraySize = atoi(line);
+		printf("%s\n", line);
+		//printf("test");
+	
+	}
+
+	while (fgets(line, len, fp) != NULL) {
+		int count = 0;
+		//printf("%d\n", arraySize);
+		stringArray = malloc(arraySize * sizeof * stringArray);
+		stringArray[count] = line; 
+		//printf("%d\n", sizeof(void*));
+		printf("%s\n", stringArray[count]);
+		count++;
+	}
+	free(line);
 }
