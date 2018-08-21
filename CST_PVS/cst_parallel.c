@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <mpi.h>
+//#include <mpi.h>
 #include <time.h>
 
 #ifdef _MSC_VER
@@ -10,7 +10,12 @@
 
 #define BUFF_SIZE 1000
 
-void testGetFile();
+typedef struct stringArray_
+{
+	void** data;
+} stringArray;
+
+int* testGetFile();
 char randomStringNumber();
 
 
@@ -28,13 +33,14 @@ int main(int argc, char* argv[])
 	
 
 	//Initialize the MPI environment
-	MPI_Init(NULL, NULL);
+	//_Init(NULL, NULL);
 
 	char buf[BUFF_SIZE];
 	int numberArray[BUFF_SIZE];
 	int i;
+	void** stringArray;
 
-
+	/*
 	//----- MPI FUNCTIONS --------
 	//Get the number of processes
 	int world_size;
@@ -51,8 +57,11 @@ int main(int argc, char* argv[])
 
 	//Finalize the MPI Environment
 	MPI_Finalize();
+	*/
 
-	testGetFile();
+	//int * sizeLength = testGetFile(&stringArray);
+
+	
 
 	//Testvariables
 	char str1[] = "123456";
@@ -64,20 +73,74 @@ int main(int argc, char* argv[])
 
 	hammingDistance(str1,str2);
 
+
+	FILE *fp = fopen("strings.txt", "r");
+	size_t len = 255;
+
+	static int arraySize = 0;
+	static int arrayLength = 0;
+
+	// need malloc memory for line, if not, segmentation fault error will occurred.
+	char *line = malloc(sizeof(char) * len);
+
+	// check if file exist (and you can open it) or not
+	if (fp == NULL) {
+		printf("can't open file strings.txt!");
+		return -1;
+	}
+
+	//read the first line - write it into the array size
+	if (fgets(line, len, fp) != NULL) {
+
+		arraySize = atoi(line);
+		printf("Size: %s\n", line);
+
+	}
+
+	stringArray = malloc(arraySize * sizeof * stringArray);
+	//read the second line - write it into the arrayLenght
+	if (fgets(line, len, fp) != NULL) {
+
+		arrayLength = atoi(line);
+		printf("Lenght: %s\n", line);
+
+	}
+	printf("Content of Array: \n\n");
+	int count = 0;
+	while (fgets(line, len, fp) != NULL) {
+		//stringArray = malloc(arraySize * sizeof * stringArray);
+		stringArray[count] = *line;
+		printf("%s\n", stringArray[count]);
+		count = count + 1;
+	}
+	printf("\n");
+
+	int *sizeLength = malloc(2 * sizeof * sizeLength);
+	sizeLength[0] = arraySize;
+	sizeLength[1] = arrayLength;
+
+	free(line);
+
+	printf("%d \n", sizeLength[0]);
+	printf("%d \n", sizeLength[1]);
+	system("pause");
+	printf("%s \n", stringArray[0]);
+
+	
+
 	system("pause");
 	return 0;
 
 }
 
-void testGetFile() {
+int* testGetFile(void*** stringArray) {
 	
 	// open file
 	FILE *fp = fopen("strings.txt", "r");
 	size_t len = 255;
 	
-	int arraySize = 0;
-	int arrayLenght = 0;
-	void** stringArray;
+	static int arraySize = 0;
+	static int arrayLength = 0;
 	
 	// need malloc memory for line, if not, segmentation fault error will occurred.
 	char *line = malloc(sizeof(char) * len);
@@ -85,7 +148,7 @@ void testGetFile() {
 	// check if file exist (and you can open it) or not
 	if (fp == NULL) {
 		printf("can't open file strings.txt!");
-		return;
+		return -1;
 	}
 
 	//read the first line - write it into the array size
@@ -99,21 +162,26 @@ void testGetFile() {
 	//read the second line - write it into the arrayLenght
 	if (fgets(line, len, fp) != NULL) {
 
-		arrayLenght = atoi(line);
+		arrayLength = atoi(line);
 		printf("Lenght: %s\n", line);
 
 	}
 	printf("Content of Array: \n\n");
+	int count = 0;
 	while (fgets(line, len, fp) != NULL) {
-		int count = 0;
-		stringArray = malloc(arraySize * sizeof * stringArray);
+		*stringArray = malloc(arraySize * sizeof * stringArray);
 		stringArray[count] = line; 
-		printf("%s\n", stringArray[count]);
+		printf("%s\n", stringArray[0]);
 		count++;
 	}
 	printf("\n");
 	
+	int *sizeLength = malloc(2 * sizeof * sizeLength);
+	sizeLength[0] = arraySize;
+	sizeLength[1] = arrayLength;
+
 	free(line);
+	return sizeLength;
 }
 
 int hammingDistance(char *str1, char *str2)
