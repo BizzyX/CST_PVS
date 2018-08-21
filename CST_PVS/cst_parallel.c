@@ -14,6 +14,14 @@ void testGetFile();
 char randomStringNumber();
 
 
+/*
+	TODO: 
+			- Funktion um einen Random String der 6 Zeichen lang ist und nur Zahlen im Bereich 0-6 enthält
+			- Es wird übergeben beim Programmaufruf, wie viele Strings eingelesen werden sollen
+			- Verbosity übergeben
+			- Printfunktion
+*/
+
 
 int main(int argc, char* argv[])
 {
