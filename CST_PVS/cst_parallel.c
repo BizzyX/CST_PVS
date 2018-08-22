@@ -30,6 +30,17 @@ char *generateString();
 			- Es wird übergeben beim Programmaufruf, wie viele Strings eingelesen werden sollen
 			- Verbosity übergeben
 			- Printfunktion
+
+			Values:
+			6
+			6
+			234150
+			510423
+			023541
+			342015
+			105234
+			451302
+
 */
 
 
@@ -72,8 +83,8 @@ int main(int argc, char* argv[])
 	char str1[] = "123456";
 	char str2[] = "122456";
 	int Lenght = 6;
-	double tempEnd = (double)stringArray.stringSize;
-	double hex = (double)15;
+	double tempEnd = (double)stringArray.stringLength;
+	double hex = (double)16;
 	double start = 0, end = pow(hex,tempEnd);
 
 	//randomStringNumber(Lenght);
@@ -191,9 +202,14 @@ char* generateString(double start, double end, stringArray stringArrayCompare )
 	snprintf(buffer, sizeof(buffer), "%%0%dx\n",stringArrayCompare.stringLength);
 
 	char *stringToTest = malloc(stringArrayCompare.stringLength * sizeof(char));
-	char *bestStringFound = malloc(stringArrayCompare.stringLength * sizeof(char));
-	for (double i = start; i <= end; i++) {
+	char *bestStringFound = malloc(stringArrayCompare.stringLength+1 * sizeof(char)); 
+
+	memcpy(bestStringFound+stringArrayCompare.stringLength , "\0", sizeof(char));
+
+	//printf("%d", sizeof(char));
+	for (double i = start; i < end; i++) {
 		sprintf(stringToTest, buffer, myHex);
+		bestDistanceLoop = -1;
 		for (int j = 0; j < stringArrayCompare.stringSize; j++) {
 		
 			distance = hammingDistance(stringToTest, stringArrayCompare.data[j]);
@@ -204,22 +220,26 @@ char* generateString(double start, double end, stringArray stringArrayCompare )
 			
 			}
 
-			if (bestDistanceLoop < bestDistanceFound) {
 			
-				bestDistanceFound = bestDistanceLoop;
-				memcpy(bestStringFound, stringToTest, stringArrayCompare.stringLength * sizeof(char));
-			
-			}
+		}
+
+		if (bestDistanceLoop < bestDistanceFound) {
+
+			bestDistanceFound = bestDistanceLoop;
+			//sprintf(bestStringFound,"%c" ,stringToTest);
+			memcpy(bestStringFound, stringToTest, stringArrayCompare.stringLength * sizeof(char));
+
 		}
 		
 
 
 		myHex++;
-		printf("%s", stringToTest);
-		printf("%d", bestDistanceFound);
+		
 	}
+	printf("%s\n", bestStringFound);
+	printf("%d\n", bestDistanceFound);
 
-	return &bestStringFound;
+	return bestStringFound;
 }
 
 /*
