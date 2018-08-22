@@ -13,9 +13,12 @@
 typedef struct stringArray_
 {
 	void** data;
+	int stringSize;
+	int stringLength;
+
 } stringArray;
 
-int* testGetFile();
+stringArray testGetFile();
 char randomStringNumber();
 
 
@@ -38,7 +41,7 @@ int main(int argc, char* argv[])
 	char buf[BUFF_SIZE];
 	int numberArray[BUFF_SIZE];
 	int i;
-	void** stringArray;
+	stringArray stringArray;
 
 	/*
 	//----- MPI FUNCTIONS --------
@@ -59,7 +62,7 @@ int main(int argc, char* argv[])
 	MPI_Finalize();
 	*/
 
-	//int * sizeLength = testGetFile(&stringArray);
+	stringArray = testGetFile();
 
 	
 
@@ -74,57 +77,17 @@ int main(int argc, char* argv[])
 	hammingDistance(str1,str2);
 
 
-	FILE *fp = fopen("strings.txt", "r");
-	size_t len = 255;
+	
 
-	static int arraySize = 0;
-	static int arrayLength = 0;
-
-	// need malloc memory for line, if not, segmentation fault error will occurred.
-	char *line = malloc(sizeof(char) * len);
-
-	// check if file exist (and you can open it) or not
-	if (fp == NULL) {
-		printf("can't open file strings.txt!");
-		return -1;
-	}
-
-	//read the first line - write it into the array size
-	if (fgets(line, len, fp) != NULL) {
-
-		arraySize = atoi(line);
-		printf("Size: %s\n", line);
-
-	}
-
-	stringArray = malloc(arraySize * sizeof * stringArray);
-	//read the second line - write it into the arrayLenght
-	if (fgets(line, len, fp) != NULL) {
-
-		arrayLength = atoi(line);
-		printf("Lenght: %s\n", line);
-
-	}
-	printf("Content of Array: \n\n");
-	int count = 0;
-	while (fgets(line, len, fp) != NULL) {
-		//stringArray = malloc(arraySize * sizeof * stringArray);
-		stringArray[count] = *line;
-		printf("%s\n", stringArray[count]);
-		count = count + 1;
-	}
-	printf("\n");
-
-	int *sizeLength = malloc(2 * sizeof * sizeLength);
-	sizeLength[0] = arraySize;
-	sizeLength[1] = arrayLength;
-
-	free(line);
-
-	printf("%d \n", sizeLength[0]);
-	printf("%d \n", sizeLength[1]);
+	printf("%d \n", stringArray.stringSize);
+	printf("%d \n", stringArray.stringLength);
 	system("pause");
-	printf("%s \n", stringArray[0]);
+	for (int i = 0; i < stringArray.stringSize; i++) {
+	
+		printf("%s \n", stringArray.data[i]);
+
+	}
+	
 
 	
 
@@ -133,55 +96,61 @@ int main(int argc, char* argv[])
 
 }
 
-int* testGetFile(void*** stringArray) {
+stringArray testGetFile() {
 	
 	// open file
 	FILE *fp = fopen("strings.txt", "r");
 	size_t len = 255;
-	
+	stringArray stringArrayTemp;
+
 	static int arraySize = 0;
 	static int arrayLength = 0;
-	
+
 	// need malloc memory for line, if not, segmentation fault error will occurred.
-	char *line = malloc(sizeof(char) * len);
-	
+	char(*line)[] = malloc(sizeof(char) * len);
+
 	// check if file exist (and you can open it) or not
 	if (fp == NULL) {
 		printf("can't open file strings.txt!");
-		return -1;
+		return ;
 	}
 
 	//read the first line - write it into the array size
 	if (fgets(line, len, fp) != NULL) {
-	
-		arraySize = atoi(line);
+
+		stringArrayTemp.stringSize = atoi(line);
 		printf("Size: %s\n", line);
-		
+
 	}
 
+	//stringArray = malloc(arraySize * sizeof * stringArray);
 	//read the second line - write it into the arrayLenght
 	if (fgets(line, len, fp) != NULL) {
 
-		arrayLength = atoi(line);
+		stringArrayTemp.stringLength = atoi(line);
 		printf("Lenght: %s\n", line);
 
 	}
 	printf("Content of Array: \n\n");
 	int count = 0;
+	stringArrayTemp.data = malloc(arraySize * sizeof * stringArrayTemp.data);
 	while (fgets(line, len, fp) != NULL) {
-		*stringArray = malloc(arraySize * sizeof * stringArray);
-		stringArray[count] = line; 
-		printf("%s\n", stringArray[0]);
-		count++;
+		printf("%s", line);
+		char(*persistString)[] = malloc(sizeof(char) * len);
+		memcpy(persistString, line, sizeof(line));
+		
+		stringArrayTemp.data[count] = persistString;
+		printf("%s\n", stringArrayTemp.data[0]);
+		count = count + 1;
 	}
 	printf("\n");
-	
-	int *sizeLength = malloc(2 * sizeof * sizeLength);
-	sizeLength[0] = arraySize;
-	sizeLength[1] = arrayLength;
 
-	free(line);
-	return sizeLength;
+	int *sizeLength = malloc(2 * sizeof * sizeLength);
+	sizeLength[0] = stringArrayTemp.stringSize;
+	sizeLength[1] = stringArrayTemp.stringLength;
+
+	//free(line);
+	return stringArrayTemp;
 }
 
 int hammingDistance(char *str1, char *str2)
