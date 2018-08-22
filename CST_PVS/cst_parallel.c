@@ -3,6 +3,7 @@
 #include <string.h>
 //#include <mpi.h>
 #include <time.h>
+#include <math.h>
 
 #ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
@@ -20,6 +21,7 @@ typedef struct stringArray_
 
 stringArray testGetFile();
 char randomStringNumber();
+char *generateString();
 
 
 /*
@@ -70,8 +72,12 @@ int main(int argc, char* argv[])
 	char str1[] = "123456";
 	char str2[] = "122456";
 	int Lenght = 6;
+	double tempEnd = (double)stringArray.stringSize;
+	double hex = (double)15;
+	double start = 0, end = pow(hex,tempEnd);
 
 	//randomStringNumber(Lenght);
+
 
 
 	hammingDistance(str1,str2);
@@ -87,8 +93,10 @@ int main(int argc, char* argv[])
 		printf("%s \n", stringArray.data[i]);
 
 	}
+	char *result = malloc(stringArray.stringLength * sizeof(char));
+	result = generateString(start, end, stringArray);
 	
-
+	printf("%s", result);
 	
 
 	system("pause");
@@ -165,12 +173,54 @@ int hammingDistance(char *str1, char *str2)
 		}
 		i++;
 	}
-	printf("the hamming distance is: %d \n", count);
+	//printf("the hamming distance is: %d \n", count);
 	
 	return count;
 	
 }
 
+char* generateString(double start, double end, stringArray stringArrayCompare )
+{
+	int distance = -1, bestDistanceFound = INT_MAX, bestDistanceLoop = -1;
+	int myHex = 0x0000;
+	myHex += start;
+	char *tempLength = malloc(stringArrayCompare.stringLength * sizeof * tempLength);
+
+	char buffer[1024];
+	sprintf(tempLength, "%d", stringArrayCompare.stringLength);
+	snprintf(buffer, sizeof(buffer), "%%0%dx\n",stringArrayCompare.stringLength);
+
+	char *stringToTest = malloc(stringArrayCompare.stringLength * sizeof(char));
+	char *bestStringFound = malloc(stringArrayCompare.stringLength * sizeof(char));
+	for (double i = start; i <= end; i++) {
+		sprintf(stringToTest, buffer, myHex);
+		for (int j = 0; j < stringArrayCompare.stringSize; j++) {
+		
+			distance = hammingDistance(stringToTest, stringArrayCompare.data[j]);
+			if (distance > bestDistanceLoop) {
+
+				bestDistanceLoop = distance;
+				
+			
+			}
+
+			if (bestDistanceLoop < bestDistanceFound) {
+			
+				bestDistanceFound = bestDistanceLoop;
+				memcpy(bestStringFound, stringToTest, stringArrayCompare.stringLength * sizeof(char));
+			
+			}
+		}
+		
+
+
+		myHex++;
+		printf("%s", stringToTest);
+		printf("%d", bestDistanceFound);
+	}
+
+	return &bestStringFound;
+}
 
 /*
 char randomStringNumber(int *Lenght) 
