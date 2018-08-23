@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-//#include <mpi.h>
+#include <mpi.h>
 #include <time.h>
 #include <math.h>
 
@@ -9,7 +9,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 
-#define BUFF_SIZE 1000
+//#define BUFF_SIZE 1000
 
 typedef struct stringArray_
 {
@@ -22,6 +22,7 @@ typedef struct stringArray_
 stringArray testGetFile();
 char randomStringNumber();
 char *generateString();
+void printResults();
 
 
 /*
@@ -44,78 +45,136 @@ char *generateString();
 */
 
 
-int main(int argc, char* argv[])
+int main(int argc, char **argv)
 {
+	//Initialize the MPI environment
+	MPI_Init(&argc, &argv);
+
+	clock_t begin, end;
+	int stringsToRead = atoi(argv[1]);
+	int verbosity = atoi(argv[2]);
+
+	int myrank, nprocs;
+	int namelen;
+	char name[MPI_MAX_PROCESSOR_NAME];
+
+	//int *sizeLength = malloc(2 * sizeof(int));
 	
 
-	//Initialize the MPI environment
-	//_Init(NULL, NULL);
-
-	char buf[BUFF_SIZE];
-	int numberArray[BUFF_SIZE];
+	//char buf[BUFF_SIZE];
+	//int numberArray[BUFF_SIZE];
 	int i;
 	stringArray stringArray;
-
-	/*
-	//----- MPI FUNCTIONS --------
-	//Get the number of processes
-	int world_size;
-	MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-
-	//Get the rank of the process
-	int world_rank;
-	MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
-
-	//Get the name of the processor
-	char processor_name[MPI_MAX_PROCESSOR_NAME];
-	int name_len;
-	MPI_Get_processor_name(processor_name, &name_len);
-
-	//Finalize the MPI Environment
-	MPI_Finalize();
-	*/
-
-	stringArray = testGetFile();
+	int bestDistanceFound = INT_MAX;
 
 	
+	
 
-	//Testvariables
-	char str1[] = "123456";
-	char str2[] = "122456";
-	int Lenght = 6;
+	stringArray = testGetFile(stringsToRead);
+
+	char *result = malloc(stringArray.stringLength * sizeof(char));
 	double tempEnd = (double)stringArray.stringLength;
 	double hex = (double)16;
-	double start = 0, end = pow(hex,tempEnd);
-
-	//randomStringNumber(Lenght);
-
-
-
-	hammingDistance(str1,str2);
-
-
+	double startRegion = 0, endRegion = pow(hex, tempEnd), regionSizePerProc = 0;
 	
+	//----- MPI FUNCTIONS --------
+	/* how many processes we have */
+	MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
 
-	printf("%d \n", stringArray.stringSize);
-	printf("%d \n", stringArray.stringLength);
-	system("pause");
-	for (int i = 0; i < stringArray.stringSize; i++) {
-	
-		printf("%s \n", stringArray.data[i]);
+	/* what is my rank */
+	MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+
+	/* what is my hostname */
+	MPI_Get_processor_name(name, &namelen);
+
+	// insert your code here(!)
+	if (myrank == 0)
+	{
+		char *bestResults = malloc(sizeof(char) * (stringArray.stringLength + 1) * nprocs);
+		//sizeLength[0] = stringArray.stringSize;
+		//sizeLength[1] = stringArray.stringLength;
+		//printf("Size %d Length %d", sizeLength[0], sizeLength[1]);
+		//broadcast to all other processes
+		for (i = 0; i < nprocs; i++)
+		{
+			if (i != myrank)
+			{
+				MPI_Recv(bestResults + (i - 1) * (stringArray.stringLength + 1), sizeof(char) * (stringArray.stringLength + 1), MPI_CHAR, i, 0, MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
+				
+			}
+			
+
+		}
+		//printf("%s", bestResults);
+		printf("%s\n", bestResults);
+		
 
 	}
-	char *result = malloc(stringArray.stringLength * sizeof(char));
-	result = generateString(start, end, stringArray);
+	else 
+	{
+		//char *test = "1234562";
+
+		regionSizePerProc = endRegion / nprocs;
+		double regionSizePerProcCeil = ceil(regionSizePerProc);
+		double regionSizePerProcFloor = floor(regionSizePerProc);
+		startRegion = regionSizePerProcFloor * myrank;
+
+		result = generateString(startRegion, startRegion + regionSizePerProcCeil, stringArray, &bestDistanceFound);
+		char *buffer = malloc(stringArray.stringLength + 1 * sizeof(char));
+		snprintf(buffer, sizeof(buffer), "%s%d", result,bestDistanceFound);
+		printf("%s\n\n", buffer);
 	
-	printf("%s", result);
+		MPI_Send(buffer, stringArray.stringLength + 1, MPI_CHAR, 0, 0, MPI_COMM_WORLD);
+		//printf("Here is my Size %d and Length %d", sizeLength[0], sizeLength[1]);
+	
+	}
+	MPI_Finalize();
 	
 
-	system("pause");
+	//read .txt file
+	
+
+
+	
+
+
+	//
+	//begin = clock();
+	//result = generateString(startRegion, endRegion, stringArray, &bestDistanceFound);
+	//end = clock();
+
+	//float t_ges = end - begin;
+	//t_ges = t_ges/CLOCKS_PER_SEC;
+	//
+	//
+	//
+	//
+
+	//if (verbosity == 1) {
+	//
+	//	printResults(bestDistanceFound, result, stringArray);
+	//
+	//}
+	//else if (verbosity == 2) {
+	//
+	//	printf("The program took %f seconds to finish!\n", t_ges);
+
+	//}
+	//else if (verbosity == 3) {
+	//
+	//	printf("The program took %f seconds to finish!\n\n\n", t_ges);
+	//	printResults(bestDistanceFound, result, stringArray);
+	//
+	//}
+	//
+	//system("pause");
+	////Finalize the MPI Environment
+	//
 	return 0;
 
 }
 
-stringArray testGetFile() {
+stringArray testGetFile(int stringsToRead) {
 	
 	// open file
 	FILE *fp = fopen("strings.txt", "r");
@@ -125,8 +184,9 @@ stringArray testGetFile() {
 	static int arraySize = 0;
 	static int arrayLength = 0;
 
+
 	// need malloc memory for line, if not, segmentation fault error will occurred.
-	char(*line)[] = malloc(sizeof(char) * len);
+	char *line = malloc(sizeof(char) * len);
 
 	// check if file exist (and you can open it) or not
 	if (fp == NULL) {
@@ -138,7 +198,17 @@ stringArray testGetFile() {
 	if (fgets(line, len, fp) != NULL) {
 
 		stringArrayTemp.stringSize = atoi(line);
-		printf("Size: %s\n", line);
+		if (stringsToRead > stringArrayTemp.stringSize) {
+		
+			printf("Could not use %d strings because only %d strings exists!\nUsing max possible number of strings available\n\n", stringsToRead, stringArrayTemp.stringSize);
+
+		}
+		else {
+		
+			stringArrayTemp.stringSize = stringsToRead;
+
+		}
+		//printf("Size: %s\n", line);
 
 	}
 
@@ -147,28 +217,33 @@ stringArray testGetFile() {
 	if (fgets(line, len, fp) != NULL) {
 
 		stringArrayTemp.stringLength = atoi(line);
-		printf("Lenght: %s\n", line);
+		//printf("Lenght: %s\n", line);
 
 	}
-	printf("Content of Array: \n\n");
+	free(line);
+	line = malloc(stringArrayTemp.stringLength * sizeof * stringArrayTemp.data);
+	//printf("Content of Array: \n\n");
 	int count = 0;
-	stringArrayTemp.data = malloc(arraySize * sizeof * stringArrayTemp.data);
+	stringArrayTemp.data = malloc(stringArrayTemp.stringSize * sizeof * stringArrayTemp.data);
 	while (fgets(line, len, fp) != NULL) {
-		printf("%s", line);
-		char(*persistString)[] = malloc(sizeof(char) * len);
+		//printf("%s", line);
+		int len = strlen(line); //where buff is your char array fgets is using
+		if (line[len - 1] == '\n')
+			line[len - 1] = '\0';
+		char *persistString = malloc(sizeof(char) * stringArrayTemp.stringLength);
 		memcpy(persistString, line, sizeof(line));
-		
 		stringArrayTemp.data[count] = persistString;
-		printf("%s\n", stringArrayTemp.data[0]);
+		//printf("%s\n", stringArrayTemp.data[0]);
 		count = count + 1;
 	}
-	printf("\n");
+	free(line);
+	//printf("\n");
 
 	int *sizeLength = malloc(2 * sizeof * sizeLength);
 	sizeLength[0] = stringArrayTemp.stringSize;
 	sizeLength[1] = stringArrayTemp.stringLength;
 
-	//free(line);
+	
 	return stringArrayTemp;
 }
 
@@ -184,29 +259,26 @@ int hammingDistance(char *str1, char *str2)
 		}
 		i++;
 	}
-	//printf("the hamming distance is: %d \n", count);
-	
 	return count;
-	
 }
 
-char* generateString(double start, double end, stringArray stringArrayCompare )
+char* generateString(double start, double end, stringArray stringArrayCompare, int *bestDistanceFound)
 {
-	int distance = -1, bestDistanceFound = INT_MAX, bestDistanceLoop = -1;
+	int distance = -1, bestDistanceLoop = -1;
 	int myHex = 0x0000;
 	myHex += start;
 	char *tempLength = malloc(stringArrayCompare.stringLength * sizeof * tempLength);
 
 	char buffer[1024];
 	sprintf(tempLength, "%d", stringArrayCompare.stringLength);
-	snprintf(buffer, sizeof(buffer), "%%0%dx\n",stringArrayCompare.stringLength);
+	snprintf(buffer, sizeof(buffer), "%%0%dx",stringArrayCompare.stringLength);
 
 	char *stringToTest = malloc(stringArrayCompare.stringLength * sizeof(char));
 	char *bestStringFound = malloc(stringArrayCompare.stringLength+1 * sizeof(char)); 
 
 	memcpy(bestStringFound+stringArrayCompare.stringLength , "\0", sizeof(char));
-
-	//printf("%d", sizeof(char));
+	
+	
 	for (double i = start; i < end; i++) {
 		sprintf(stringToTest, buffer, myHex);
 		bestDistanceLoop = -1;
@@ -214,59 +286,32 @@ char* generateString(double start, double end, stringArray stringArrayCompare )
 		
 			distance = hammingDistance(stringToTest, stringArrayCompare.data[j]);
 			if (distance > bestDistanceLoop) {
-
 				bestDistanceLoop = distance;
-				
-			
 			}
-
-			
 		}
-
-		if (bestDistanceLoop < bestDistanceFound) {
-
-			bestDistanceFound = bestDistanceLoop;
-			//sprintf(bestStringFound,"%c" ,stringToTest);
+		if (bestDistanceLoop < *bestDistanceFound) {
+			*bestDistanceFound = bestDistanceLoop;
 			memcpy(bestStringFound, stringToTest, stringArrayCompare.stringLength * sizeof(char));
-
 		}
-		
-
-
-		myHex++;
-		
+		myHex++;	
 	}
-	printf("%s\n", bestStringFound);
-	printf("%d\n", bestDistanceFound);
-
 	return bestStringFound;
 }
 
-/*
-char randomStringNumber(int *Lenght) 
+void printResults(int distance, char *closestString, stringArray stringArrayCompare)
 {
-	int numberLenght = Lenght;
-	printf("numberLenght:%d\n", numberLenght);
-	srand(time(NULL));
-	
-	//malloc for string lenght
-	char *stringLenght = malloc(sizeof(char) * numberLenght);
-	//array for random string
-	void** stringArray;
-	stringArray = malloc(numberLenght * sizeof *stringArray);
-	printf("stringArray: %d", stringArray);
-
-	
-	
-
-	for (int i = 1; i <= numberLenght; i++)
-	{
-		
-		int randomNumber = (rand() % numberLenght + 1);
-		stringArray[i] = randomNumber + '0';
-		printf("%d\n", stringArray[i]);
-
+	int distanceTemp;
+	printf("============================\n");
+	printf("Closest string: \n");
+	printf("Distance %d\n", distance);
+	printf("New string  %s\n", closestString);
+	printf("String        Distance\n");
+	for (int i = 0; i < stringArrayCompare.stringSize; i++) {
+		distanceTemp = hammingDistance(closestString, stringArrayCompare.data[i]);
+		printf("%s        %d", stringArrayCompare.data[i] , distanceTemp);
+		printf("\n");
 	}
-	printf("Stringnumber: %d\n", stringArray);
+	printf("============================\n");
+
 }
-*/
+
