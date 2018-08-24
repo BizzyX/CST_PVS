@@ -90,24 +90,86 @@ int main(int argc, char **argv)
 	// insert your code here(!)
 	if (myrank == 0)
 	{
-		char *bestResults = malloc(sizeof(char) * (stringArray.stringLength + 1) * nprocs);
-		//sizeLength[0] = stringArray.stringSize;
-		//sizeLength[1] = stringArray.stringLength;
-		//printf("Size %d Length %d", sizeLength[0], sizeLength[1]);
+
+		
+		char *bestResults = malloc(sizeof(char) * (stringArray.stringLength+1) * nprocs);
+
+		regionSizePerProc = endRegion / nprocs;
+		//printf("Regio : %f EndRegio : %f\n", regionSizePerProc, endRegion);
+		double regionSizePerProcCeil = ceil(regionSizePerProc);
+		begin = clock();
+		result = generateString((double)0, regionSizePerProcCeil, stringArray, &bestDistanceFound);
+
+		//printf("%s\n\n", result);
+		//printf("%d\n", bestDistanceFound);
+
+		char *buffer = malloc((stringArray.stringLength + 1) * sizeof(char));
+		snprintf(buffer, sizeof(buffer)+1, "%s%d", result, bestDistanceFound);
+		//printf("%d\n\n", bestDistanceFound);
+		//printf("%s\n", buffer);
+		memcpy(bestResults, buffer, stringArray.stringLength+1);
+
+
 		//broadcast to all other processes
 		for (i = 0; i < nprocs; i++)
 		{
 			if (i != myrank)
 			{
-				MPI_Recv(bestResults + (i - 1) * (stringArray.stringLength + 1), sizeof(char) * (stringArray.stringLength + 1), MPI_CHAR, i, 0, MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
+				MPI_Recv(bestResults + (i) * (stringArray.stringLength + 1), sizeof(char) * (stringArray.stringLength + 2), MPI_CHAR, i, 0, MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
 				
 			}
 			
-
+			
 		}
 		//printf("%s", bestResults);
-		printf("%s\n", bestResults);
+		//printf("%s", bestResults);
+		//printf("%s\n", bestResults);
 		
+
+		int bestDistanceFinal = INT_MAX, positionOfBestString = 0;
+
+		for (int k = 1; k <= nprocs; k++) {
+		
+			int distanceTemp = *(bestResults + stringArray.stringLength * k + (k-1)) -48;
+			//printf("%d\n\n", distanceTemp);
+			//printf("%s", bestResults);
+			if (distanceTemp < bestDistanceFinal) {
+			
+				bestDistanceFinal = distanceTemp;
+				positionOfBestString = k;
+			
+			}
+		
+		}
+
+		char *bestStringFinal = malloc(sizeof(char) * stringArray.stringLength);
+		memcpy(bestStringFinal, (bestResults + stringArray.stringLength * (positionOfBestString-1) + (positionOfBestString-1)), stringArray.stringLength);
+		
+		end = clock();
+
+		float t_ges = end - begin;
+		t_ges = t_ges / CLOCKS_PER_SEC;
+
+		//printf("%d",bestDistanceFinal);
+		if (verbosity == 1) {
+
+			printResults(bestDistanceFinal, bestStringFinal, stringArray);
+
+		}
+		else if (verbosity == 2) {
+
+			printf("\nThe program took %f seconds to finish!\n", t_ges);
+
+		}
+		else if (verbosity == 3) {
+
+			printf("\nThe program took %f seconds to finish!\n\n\n", t_ges);
+			printResults(bestDistanceFinal, bestStringFinal, stringArray);
+
+		}
+		//printf("%s", bestStringFinal);
+		//printf("Dist = %d K= %d", bestDistanceFinal,positionOfBestString);
+		//printResults(bestDistanceFinal, bestStringFinal, stringArray);
 
 	}
 	else 
@@ -115,14 +177,16 @@ int main(int argc, char **argv)
 		//char *test = "1234562";
 
 		regionSizePerProc = endRegion / nprocs;
+		
 		double regionSizePerProcCeil = ceil(regionSizePerProc);
 		double regionSizePerProcFloor = floor(regionSizePerProc);
 		startRegion = regionSizePerProcFloor * myrank;
+		//printf("Regio: %f EndRegio : %f\n", regionSizePerProc, startRegion);
 
 		result = generateString(startRegion, startRegion + regionSizePerProcCeil, stringArray, &bestDistanceFound);
 		char *buffer = malloc(stringArray.stringLength + 1 * sizeof(char));
-		snprintf(buffer, sizeof(buffer), "%s%d", result,bestDistanceFound);
-		printf("%s\n\n", buffer);
+		snprintf(buffer, sizeof(buffer)+1, "%s%d", result,bestDistanceFound);
+		//printf("%s\n\n", buffer);
 	
 		MPI_Send(buffer, stringArray.stringLength + 1, MPI_CHAR, 0, 0, MPI_COMM_WORLD);
 		//printf("Here is my Size %d and Length %d", sizeLength[0], sizeLength[1]);
@@ -311,7 +375,7 @@ void printResults(int distance, char *closestString, stringArray stringArrayComp
 		printf("%s        %d", stringArrayCompare.data[i] , distanceTemp);
 		printf("\n");
 	}
-	printf("============================\n");
+	printf("============================\n\n");
 
 }
 
