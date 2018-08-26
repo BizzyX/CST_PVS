@@ -1,0 +1,11 @@
+Number Of Cores: 1
+Time needed: -0.000000 seconds 
+Maximum String Lenght: 6
+Number Of Cores: 1
+Time needed: 36893488147419103232.000000 seconds 
+Maximum String Lenght: 6
+
+
+Number Of Cores: 1
+Time needed: -0.000000 seconds 
+Maximum String Lenght: 6
