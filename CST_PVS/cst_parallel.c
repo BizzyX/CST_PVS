@@ -94,8 +94,8 @@ int main(int argc, char **argv)
 
 		char *buffer = malloc((stringArray.stringLength + 2) * sizeof(char));
 		snprintf(buffer, sizeof(char)*stringArray.stringLength + 2, "%s%d", result, bestDistanceFound);
-		memcpy(bestResults, buffer, stringArray.stringLength + 1);
-		memcpy(bestResults + (nprocs * (stringArray.stringLength + 2)), "\0", sizeof(char));
+		memcpy(bestResults, buffer, stringArray.stringLength + 2);
+		//memcpy(bestResults + (nprocs * (stringArray.stringLength + 2)), "\0", sizeof(char));
 
 
 
@@ -111,7 +111,7 @@ int main(int argc, char **argv)
 
 		}
 
-		printf("%s\n\n", bestResults);
+		//printf("%s\n\n", bestResults);
 
 		int bestDistanceFinal = INT_MAX, positionOfBestString = 0;
 
@@ -127,8 +127,10 @@ int main(int argc, char **argv)
 
 		}
 
+
 		char *bestStringFinal = malloc(sizeof(char) * stringArray.stringLength + 1);
 		memcpy(bestStringFinal, (bestResults + stringArray.stringLength * (positionOfBestString - 1) + (positionOfBestString - 1)), stringArray.stringLength);
+		bestStringFinal[stringArray.stringLength] = '\0';
 
 		end = clock();
 
@@ -166,6 +168,11 @@ int main(int argc, char **argv)
 		result = generateString(startRegion, startRegion + regionSizePerProcCeil, stringArray, &bestDistanceFound);
 		char *buffer = malloc(stringArray.stringLength + 2 * sizeof(char));
 		snprintf(buffer, sizeof(char)*stringArray.stringLength + 2, "%s%d", result, bestDistanceFound);
+		
+
+		//result[stringArray.stringSize + 1] = bestDistanceFound +'0';
+		//printf("%s\n", result);
+		//printf("%s\n", buffer);
 		//printf("Start: %f Step: %f END: %f BestResult: %s\n\n" , startRegion, regionSizePerProc, startRegion + regionSizePerProcCeil,buffer);
 
 		MPI_Send(buffer, stringArray.stringLength + 1, MPI_CHAR, 0, 0, MPI_COMM_WORLD);
@@ -227,17 +234,17 @@ stringArray testGetFile(int stringsToRead) {
 	line = malloc(stringArrayTemp.stringLength + 1 * sizeof * stringArrayTemp.data);
 
 	int count = 0;
-	stringArrayTemp.data = malloc(stringArrayTemp.stringSize * sizeof * stringArrayTemp.data + 1);
+	stringArrayTemp.data = malloc(stringArrayTemp.stringSize * sizeof * stringArrayTemp.data +1);
 	while (fgets(line, len, fp) != NULL) {
 
-		int lenInt = strlen(line); //where buff is your char array fgets is using
-		if (line[lenInt - 1] == '\n')
-			line[lenInt - 1] = '\0';
+		//where buff is your char array fgets is using
 		char *persistString = malloc(sizeof(char) * stringArrayTemp.stringLength + 1);
 		memcpy(persistString, line, stringArrayTemp.stringLength + 1 * sizeof(char));
+		if(persistString[stringArrayTemp.stringLength] == '\n')
+		persistString[stringArrayTemp.stringLength] = '\0';
 		stringArrayTemp.data[count] = persistString;
 
-		printf("StringData: %s\n", stringArrayTemp.data[count]);
+		//printf("StringData: %s\n", stringArrayTemp.data[count]);
 
 		count = count + 1;
 	}
@@ -277,10 +284,9 @@ char* generateString(double start, double end, stringArray stringArrayCompare, i
 	sprintf(tempLength, "%d", stringArrayCompare.stringLength);
 	snprintf(buffer, sizeof(buffer), "%%0%dx", stringArrayCompare.stringLength);
 
-	char *stringToTest = malloc(stringArrayCompare.stringLength * sizeof(char));
+	char *stringToTest = malloc(stringArrayCompare.stringLength + 1 * sizeof(char));
 	char *bestStringFound = malloc(stringArrayCompare.stringLength + 1 * sizeof(char));
-
-	memcpy(bestStringFound + stringArrayCompare.stringLength, "\0", sizeof(char));
+	
 
 
 	for (double i = start; i < end; i++) {
@@ -295,7 +301,7 @@ char* generateString(double start, double end, stringArray stringArrayCompare, i
 		}
 		if (bestDistanceLoop < *bestDistanceFound) {
 			*bestDistanceFound = bestDistanceLoop;
-			memcpy(bestStringFound, stringToTest, stringArrayCompare.stringLength * sizeof(char));
+			memcpy(bestStringFound, stringToTest, stringArrayCompare.stringLength + 1 * sizeof(char));
 		}
 		myHex++;
 	}
