@@ -62,7 +62,7 @@ int main(int argc, char **argv)
 	stringArray = testGetFile(stringsToRead);
 
 	//malloc memory for the best string found
-	char *result = malloc(stringArray.stringLength+1 * sizeof(char));
+	char *result = malloc(stringArray.stringLength * sizeof(char));
 	double tempEnd = (double)stringArray.stringLength;
 	double hex = (double)16;
 	double startRegion = 0, endRegion = pow(hex, tempEnd), regionSizePerProc = 0;
@@ -92,11 +92,8 @@ int main(int argc, char **argv)
 		//go through the region that processor 0 is responsible for
 		result = generateString((double)0, regionSizePerProcCeil, stringArray, &bestDistanceFound);
 
-		char *buffer = malloc((stringArray.stringLength + 2) * sizeof(char));
-		snprintf(buffer, sizeof(char)*stringArray.stringLength + 2, "%s%d", result, bestDistanceFound);
+		char *buffer = malloc((stringArray.stringLength + 1) * sizeof(char));
 		memcpy(bestResults, buffer, stringArray.stringLength+1);
-		memcpy(bestResults + (nprocs * (stringArray.stringLength + 2)), "\0", sizeof(char));
-		
 
 
 		//broadcast to all other processes
@@ -104,14 +101,12 @@ int main(int argc, char **argv)
 		{
 			if (i != myrank)
 			{
-				MPI_Recv(bestResults + (i) * (stringArray.stringLength + 1), sizeof(char) * (stringArray.stringLength + 1), MPI_CHAR, i, 0, MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
+				MPI_Recv(bestResults + (i) * (stringArray.stringLength + 1), sizeof(char) * (stringArray.stringLength + 2), MPI_CHAR, i, 0, MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
 				
 			}
 			
 			
 		}
-
-		printf("%s\n\n", bestResults);
 	
 		int bestDistanceFinal = INT_MAX, positionOfBestString = 0;
 
@@ -127,7 +122,7 @@ int main(int argc, char **argv)
 		
 		}
 
-		char *bestStringFinal = malloc(sizeof(char) * stringArray.stringLength+1);
+		char *bestStringFinal = malloc(sizeof(char) * stringArray.stringLength);
 		memcpy(bestStringFinal, (bestResults + stringArray.stringLength * (positionOfBestString-1) + (positionOfBestString-1)), stringArray.stringLength);
 		
 		end = clock();
@@ -164,10 +159,9 @@ int main(int argc, char **argv)
 		double regionSizePerProcFloor = floor(regionSizePerProc);
 		startRegion = regionSizePerProcFloor * myrank;
 		result = generateString(startRegion, startRegion + regionSizePerProcCeil, stringArray, &bestDistanceFound);
-		char *buffer = malloc(stringArray.stringLength + 2 * sizeof(char));
-		snprintf(buffer, sizeof(char)*stringArray.stringLength + 2, "%s%d", result,bestDistanceFound);
-		//printf("Start: %f Step: %f END: %f BestResult: %s\n\n" , startRegion, regionSizePerProc, startRegion + regionSizePerProcCeil,buffer);
-
+		char *buffer = malloc(stringArray.stringLength + 1 * sizeof(char));
+		snprintf(buffer, sizeof(buffer)+1, "%s%d", result,bestDistanceFound);
+	
 		MPI_Send(buffer, stringArray.stringLength + 1, MPI_CHAR, 0, 0, MPI_COMM_WORLD);
 	
 	}
@@ -224,21 +218,19 @@ stringArray testGetFile(int stringsToRead) {
 
 	}
 	free(line);
-	line = malloc(stringArrayTemp.stringLength+1 * sizeof * stringArrayTemp.data);
+	line = malloc(stringArrayTemp.stringLength * sizeof * stringArrayTemp.data);
 	
 	int count = 0;
-	stringArrayTemp.data = malloc(stringArrayTemp.stringSize * sizeof * stringArrayTemp.data+1);
+	stringArrayTemp.data = malloc(stringArrayTemp.stringSize * sizeof * stringArrayTemp.data);
 	while (fgets(line, len, fp) != NULL) {
 		
-		int lenInt = strlen(line); //where buff is your char array fgets is using
-		if (line[lenInt - 1] == '\n')
-			line[lenInt - 1] = '\0';
-		char *persistString = malloc(sizeof(char) * stringArrayTemp.stringLength+1);
-		memcpy(persistString, line, stringArrayTemp.stringLength+1 * sizeof(char));
+		int len = strlen(line); //where buff is your char array fgets is using
+		if (line[len - 1] == '\n')
+			line[len - 1] = '\0';
+		char *persistString = malloc(sizeof(char) * stringArrayTemp.stringLength);
+		memcpy(persistString, line, sizeof(line));
 		stringArrayTemp.data[count] = persistString;
 		
-		printf("StringData: %s\n", stringArrayTemp.data[count]);
-
 		count = count + 1;
 	}
 	free(line);
@@ -269,7 +261,7 @@ int hammingDistance(char *str1, char *str2)
 char* generateString(double start, double end, stringArray stringArrayCompare, int *bestDistanceFound)
 {
 	int distance = -1, bestDistanceLoop = -1;
-	unsigned long long myHex = 0x000000;
+	int myHex = 0x0000;
 	myHex += start;
 	char *tempLength = malloc(stringArrayCompare.stringLength * sizeof * tempLength);
 
@@ -319,3 +311,22 @@ void printResults(int distance, char *closestString, stringArray stringArrayComp
 
 }
 
+void printTimeToTxt(float tges, int nprocs, int stringLenght)
+{
+	FILE *fp = fopen("timeresults.txt", "a");
+	if (fp == NULL)
+	{
+		printf("Error opening file!\n");
+		exit(1);
+	}
+
+	int maxStringLenght = stringLenght;
+	int numberOfProcs = nprocs;
+	float timeGes = tges;
+	fprintf(fp, "\n\n");
+	fprintf(fp, "Number Of Cores: %d\n", numberOfProcs);
+	fprintf(fp, "Time needed: %f seconds \n", timeGes);
+	fprintf(fp, "Maximum String Lenght: %d\n", maxStringLenght);
+
+	//fclose(fp);
+}
